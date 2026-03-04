@@ -1,0 +1,15 @@
+flask
+authlib
+paho-mqtt
+python-dotenv
+requests
+mediatr
+dependency-injector
+flasgger
+PyJWT
+Flask-Cors
+flask-talisman
+marshmallow
+pytest
+pytest-cov
+coverage

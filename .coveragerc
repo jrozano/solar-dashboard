@@ -1,0 +1,17 @@
+[run]
+source = .
+omit =
+    tests/*
+    .venv/*
+    src/*
+
+[report]
+omit =
+    tests/*
+    .venv/*
+    src/*
+exclude_also =
+    if __name__ == .__main__.
+
+[xml]
+output = coverage.xml

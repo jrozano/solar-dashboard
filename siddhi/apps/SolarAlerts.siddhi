@@ -1,0 +1,54 @@
+@App:name('SolarAlerts')
+@App:description('CEP rules for solar energy monitoring')
+
+-- SOURCES
+@source(type='mqtt',
+        url='tcp://hostname:1883',
+        topic='ssd-solar/events/sensor',
+        client.id='siddhi-sensor-source',
+        username='username',
+        password='password',
+        @map(type='json'))
+define stream SensorStream (sensor string, value double);
+
+@source(type='mqtt',
+        url='tcp://hostname:1883',
+        topic='ssd-solar/events/api_key',
+        client.id='siddhi-apikey-source',
+        username='username',
+        password='password',
+        @map(type='json'))
+define stream ApiKeyStream (user_id string, name string);
+
+-- SINKS
+
+@sink(type='mqtt',
+      url='tcp://hostname:1883',
+      topic='ssd-solar/cep/alerts',
+      client.id='siddhi-alert-sink',
+      username='username',
+      password='password',
+      @map(type='json'))
+define stream AlertStream (rule string, severity string, message string);
+
+-- BATTERY ALERT
+
+from SensorStream[sensor == 'battery_power' and value > 1000]
+select 'battery_power_high' as rule,
+       'critical' as severity,
+       str:concat('Battery power (', convert(value, 'string'), ' W) exceeds 1000 W') as message
+output last every 3 events
+insert into AlertStream;
+
+-- API KEY ALERT
+
+from ApiKeyStream#window.time(3 min)
+select count() as key_count
+having key_count > 5
+insert into ApiKeyBurstStream;
+
+from ApiKeyBurstStream
+select 'too_many_api_keys' as rule,
+       'warning' as severity,
+       str:concat('More than 5 API keys created in 3 min (count: ', convert(key_count, 'string'), ')') as message
+insert into AlertStream;
